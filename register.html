@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="glass-card">
+        <h2>Create Identity</h2>
+        <form action="/register" method="POST">
+            <input type="text" name="name" placeholder="Full Name" required>
+            <input type="text" name="org" placeholder="Organization" required>
+            
+            <label style="color:var(--primary); display:block; text-align:left; margin-top:10px;">Select Your Role:</label>
+            <select name="role" style="width:100%; padding:14px; background:#161d2f; color:white; border-radius:12px; border:1px solid var(--primary); margin:10px 0;">
+                <option value="Sender">Sender</option>
+                <option value="Receiver">Receiver</option>
+            </select>
+            
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Register Now</button>
+        </form>
+        <p style="margin-top:15px; color:grey;">Already a member? <a href="/login" style="color:var(--primary);">Login</a></p>
+    </div>
+</body>
+</html>

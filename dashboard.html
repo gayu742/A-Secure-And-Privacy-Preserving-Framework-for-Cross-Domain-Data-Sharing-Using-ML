@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Secure Terminal | Split Workspace</title>
+</head>
+<body>
+    <div class="main-container" style="display: flex; height: 100vh; width: 100vw; overflow: hidden;">
+        
+        <div class="side-panel" style="flex: 1; padding: 30px; border-right: 1px solid rgba(255,255,255,0.1); background: rgba(16, 22, 35, 0.4); backdrop-filter: blur(10px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">🛡️ Sender Portal</h2>
+                <button onclick="location.href='/logout'" style="padding: 8px 15px; background: rgba(255,0,0,0.2); color: #ff4b2b; border: none; border-radius: 8px; cursor: pointer;">Logout</button>
+            </div>
+            
+            <p style="color:var(--text-dim);">ID: <b>{{ session['user'] }}</b> | Org: <b>{{ session['org'] }}</b></p>
+            
+            <div style="background: rgba(0,242,255,0.03); padding: 25px; border-radius: 20px; border: 1px dashed rgba(0,242,255,0.2); margin-top: 30px;">
+                <h3 style="margin-top:0;">Initiate Handshake</h3>
+                <form action="/initiate_handshake" method="POST">
+                    <input type="text" name="receiver" placeholder="Target Receiver" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);" required>
+                    <input type="text" name="message" placeholder="Handshake Note (e.g. Hi)" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);" required>
+                    <button type="submit" style="width: 100%; padding: 12px; border-radius: 10px; background: linear-gradient(to right, #00f2ff, #7000ff); color: white; font-weight: bold; border: none; cursor: pointer;">Send Hello</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="side-panel" style="flex: 1; padding: 30px; background: rgba(10, 15, 25, 0.6); overflow-y: auto;">
+            <h2 style="margin-bottom: 20px;">📊 Transmission Logs</h2>
+            
+            <div id="logs" style="display: flex; flex-direction: column; gap: 15px;">
+                {% for c in chats %}
+                <div class="msg-row" id="row-{{ c['id'] }}" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border-left: 4px solid {% if c['status'] == 'Read' %}#00ff80{% elif c['status'] == 'Replied' %}#00d2ff{% elif c['status'] == 'Pending' %}#ffab00{% else %}#7000ff{% endif %}; transition: 0.3s;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <small style="color: #94a3b8;">From: <b>{{ c['sender'] }}</b> To: <b>{{ c['receiver'] }}</b></small>
+                        <span class="status-tag {{ c['status'].lower().replace(' ', '-') }}" style="padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; border: 1px solid;">
+                            {{ c['status'] }}
+                        </span>
+                    </div>
+
+                    {% if session['user'] == c['receiver'] %}
+                        {% if c['status'] == 'Pending' %}
+                            <p style="margin: 10px 0;">{{ c['handshake_msg'] }}</p>
+                            <button onclick="location.href='/accept_request/{{ c['id'] }}'" style="background: #7000ff; color: white; padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer;">Accept Handshake</button>
+                        {% elif c['status'] == 'Data Sent' %}
+                            <div class="dummy-text" onclick="revealData({{ c['id'] }}, '{{ c['secret_key'] }}')" style="color: #00f2ff; font-style: italic; cursor: pointer; margin-top: 10px;">
+                                🔒 {{ c['dummy_text'] or 'ENCRYPTED_PACKET_STREAM' }} (Tap to Reveal)
+                            </div>
+                        {% elif c['status'] == 'Read' %}
+                             <p style="color:#00ff80; margin: 10px 0;">🔓 Message Read.</p>
+                             <form action="/send_reply/{{ c['id'] }}" method="POST" style="margin-top:10px; display: flex; gap: 10px;">
+                                <input type="text" name="reply_text" placeholder="Reply (e.g. OK/Fine)" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);" required>
+                                <button type="submit" style="background: #00d2ff; color: black; padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;">Send Reply</button>
+                             </form>
+                        {% endif %}
+
+                    {% elif session['user'] == c['sender'] %}
+                        {% if c['status'] == 'Accepted' %}
+                            <form action="/push_data/{{ c['id'] }}" method="POST" style="margin-top:10px; display: flex; gap: 10px;">
+                                <input type="text" name="data" placeholder="Type Secret Data..." style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);" required>
+                                <button type="submit" style="background: #00f2ff; color: black; padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;">Push Data</button>
+                            </form>
+                        {% elif c['status'] == 'Data Sent' %}
+                            <p style="color: #64748b; margin: 10px 0;">Waiting for peer to unlock...</p>
+                        {% elif c['status'] == 'Replied' %}
+                            <div class="dummy-text" onclick="revealData({{ c['id'] }}, '{{ c['reply_key'] }}')" style="color: #00d2ff; font-style: italic; cursor: pointer; margin-top: 10px;">
+                                📩 New Reply Received (Tap to Unlock)
+                            </div>
+                        {% elif c['status'] == 'Read' %}
+                            <p style="color: #00ff80; margin: 10px 0;">✅ Process Completed.</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function revealData(id, autoKey) {
+            try {
+                alert("🔐 SECURITY ALERT: Key Generated: " + autoKey);
+                
+                let key = prompt("Enter the Secret Key to reveal data:");
+                if (key) {
+                    let fData = new FormData();
+                    fData.append('id', id);
+                    fData.append('key', key);
+                    
+                    let resp = await fetch('/unlock_and_read', { method: 'POST', body: fData });
+                    let result = await resp.json();
+                    
+                    if (result.status === 'success') {
+                        alert("✅ Decrypted Message: " + result.msg);
+                        location.reload();
+                    } else {
+                        alert("❌ Invalid Key!");
+                    }
+                }
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        document.querySelectorAll('.msg-row').forEach(row => {
+            row.addEventListener('mouseenter', () => row.style.background = "rgba(255,255,255,0.07)");
+            row.addEventListener('mouseleave', () => row.style.background = "rgba(255,255,255,0.03)");
+        });
+    </script>
+</body>
+</html>

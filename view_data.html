@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>🔒 Secret Vault</title>
+</head>
+<body>
+    <div class="glass-card">
+        <h2>🔒 Encrypted Vault</h2>
+        <p style="color:var(--text-dim);">Enter the secret key to reveal the content.</p>
+        
+        <div id="unlock-zone">
+            <input type="text" id="userInputKey" placeholder="Enter 6-Digit Key" maxlength="6" style="text-align:center; font-size:1.5rem; letter-spacing:5px;">
+            <button onclick="processDecryption('{{ transfer_id }}')">Unlock Data</button>
+        </div>
+
+        <div id="secretResult" style="display: none; margin-top: 30px; padding: 20px; background: rgba(0, 255, 128, 0.05); border: 1px solid rgba(0, 255, 128, 0.2); border-radius: 15px;">
+            <h4 style="color: #00ff80; margin-top:0;">✅ Decrypted Message:</h4>
+            <p id="revealedData" style="word-wrap: break-word; line-height: 1.6;"></p>
+            <button onclick="location.href='/dashboard'" style="background: rgba(255,255,255,0.1); margin-top:15px;">Back to Terminal</button>
+        </div>
+    </div>
+
+    <script>
+        async function processDecryption(id) {
+            let key = document.getElementById('userInputKey').value;
+            let formData = new FormData();
+            formData.append('key', key);
+
+            let resp = await fetch('/decrypt_data/' + id, { method: 'POST', body: formData });
+            let result = await resp.json();
+
+            if(result.status === 'success') {
+                document.getElementById('unlock-zone').style.display = 'none';
+                document.getElementById('secretResult').style.display = 'block';
+                document.getElementById('revealedData').innerText = result.data;
+            } else {
+                alert("❌ " + result.message);
+            }
+        }
+    </script>
+</body>
+</html>

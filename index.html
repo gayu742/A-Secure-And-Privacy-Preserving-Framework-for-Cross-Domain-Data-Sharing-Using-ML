@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Secure Portal Access</title>
+</head>
+<body>
+    <div class="glass-card" style="max-width: 600px;">
+        <h2 style="margin-bottom: 30px;">🛡️ Secure Protocol Entry</h2>
+        <p style="color: var(--text-dim); margin-bottom: 40px;">Select your authorized role to access the terminal.</p>
+        
+        <div style="display: flex; gap: 20px;">
+            <div class="role-box" onclick="location.href='/login/Sender'" style="flex:1; padding: 30px; border: 1px solid var(--primary); border-radius: 20px; cursor: pointer; transition: 0.3s;">
+                <h1 style="font-size: 3rem; margin:0;">📤</h1>
+                <h3>SENDER</h3>
+            </div>
+            <div class="role-box" onclick="location.href='/login/Receiver'" style="flex:1; padding: 30px; border: 1px solid var(--accent); border-radius: 20px; cursor: pointer; transition: 0.3s;">
+                <h1 style="font-size: 3rem; margin:0;">📥</h1>
+                <h3>RECEIVER</h3>
+            </div>
+        </div>
+        
+        <p style="margin-top: 40px; color: grey;">Unauthorized access is prohibited.</p>
+        <button onclick="location.href='/register'" style="background: rgba(255,255,255,0.05); border: 1px solid var(--primary); margin-top: 10px;">Create New Identity</button>
+    </div>
+</body>
+</html>

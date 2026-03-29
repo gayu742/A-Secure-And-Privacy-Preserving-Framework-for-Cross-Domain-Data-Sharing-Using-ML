@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="glass-card">
+        <h2>{{ role }} Login</h2>
+        <form id="loginForm">
+            <input type="text" id="name" name="name" placeholder="Enter Username" required>
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <button type="submit">Access Terminal</button>
+        </form>
+        <p style="margin-top:15px;"><a href="/" style="color: grey;">← Back to Role Selection</a></p>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            let formData = new FormData(e.target);
+            let resp = await fetch('/login/{{ role }}', { method: 'POST', body: formData });
+            let res = await resp.json();
+            
+            if (res.status === 'success') {
+                window.location.href = '/dashboard';
+            } else {
+                alert("❌ " + res.message); // Inga thaan unga wrong password alert varum
+            }
+        };
+    </script>
+</body>
+</html>
